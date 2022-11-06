@@ -118,7 +118,7 @@ async function FetchModuleNameFromCode(Query) {
 const Discord = require('discord.js');
 const scheduler = require('node-schedule');
 
-const client = new Discord.Client({ intents: ['DIRECT_MESSAGES'] });
+const client = new Discord.Client({ intents: [Discord.GatewayIntentBits.DirectMessages] });
 
 client.on('ready', async () => {
   console.log(`${client.user.username} is online!`);
@@ -179,19 +179,22 @@ client.on('interactionCreate', async interaction => {
     
     FetchRawTimetableData(courseCode, day, new Date())
       .then(async (res) => {
+        console.log(res)
         res = res[0].CategoryEvents;
 
-        console.log('here');
-        if (res.length < 1) return
+        if (res.length < 1) {
+          console.log('No events.') 
+          return
+        }
 
         res.sort(function (a, b) {
           var aDate = new Date(a.StartDateTime).getTime(), bDate = new Date(b.StartDateTime).getTime();
           return aDate - bDate;
         });
 
-        let embed = new Discord.MessageEmbed()
+        let embed = new Discord.EmbedBuilder()
           .setTitle(`${courseCode} Timetable for ${day}`)
-          .setColor('GREEN');
+          .setColor('Green');
 
         res.forEach(module => {
           const locations = module.Location.split(', ');
@@ -199,7 +202,12 @@ client.on('interactionCreate', async interaction => {
           locations.forEach(location => {
             locationArray.push(location.split('.')[1]);
           })
-          embed.addField(`${module.Name} (${module.Description})`, `Time: ${new Date(module.StartDateTime).toLocaleTimeString().slice(0, -6)}-${new Date(module.EndDateTime).toLocaleTimeString().slice(0, -6)}\nLocation: ${locationArray.join(', ')}`);
+          embed.addFields(
+            {
+              name: `${module.Name} (${module.Description})`, 
+              value: `Time: ${new Date(module.StartDateTime).toLocaleTimeString().slice(0, -6)}-${new Date(module.EndDateTime).toLocaleTimeString().slice(0, -6)}\nLocation: ${locationArray.join(', ')}`
+            },
+          );
         });
         await interaction.reply({ embeds: [embed] });
       });
@@ -223,9 +231,9 @@ const morningUpdate = function (user, course) {
         return aDate - bDate;
       });
 
-      let embed = new Discord.MessageEmbed()
+      let embed = new Discord.EmbedBuilder()
         .setTitle(`${course} Timetable for ${new Date().toDateString()}`)
-        .setColor('GREEN');
+        .setColor('Green');
 
       res.forEach(module => {
         const locations = module.Location.split(', ');
@@ -233,7 +241,12 @@ const morningUpdate = function (user, course) {
         locations.forEach(location => {
           locationArray.push(location.split('.')[1]);
         })
-        embed.addField(`${module.Name} (${module.Description})`, `Time: ${new Date(module.StartDateTime).toLocaleTimeString().slice(0, -6)}-${new Date(module.EndDateTime).toLocaleTimeString().slice(0, -6)}\nLocation: ${locationArray.join(', ')}`);
+        embed.addFields(
+          {
+            name: `${module.Name} (${module.Description})`, 
+            value: `Time: ${new Date(module.StartDateTime).toLocaleTimeString().slice(0, -6)}-${new Date(module.EndDateTime).toLocaleTimeString().slice(0, -6)}\nLocation: ${locationArray.join(', ')}`
+          },
+        );
       });
 
       embed.setDescription(`Times shown are in GMT+1`);

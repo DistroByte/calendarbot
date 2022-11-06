@@ -1,5 +1,5 @@
 from requests import post
-from dotenv import dotenv_values
+from dotenv import dotenv_values #type:ignore
 
 config_dict = dotenv_values(".env")
 token = config_dict['TOKEN']
@@ -10,8 +10,22 @@ url = 'https://discord.com/api/v10/applications/' + application_id + '/guilds/' 
 
 # Command goes here
 json = {
-    "name": "High Five",
-    "type": 2
+    "name": "timetable",
+    "type": 1,
+    "description": "Get your timetable for the day.",
+    "options": [
+        {
+            "name": "course",
+            "description": "The course code to query.",
+            "type": 3,
+            "required": True
+        },
+        {
+            "name": "day",
+            "description": "The day to query. Defaults to today.",
+            "type": 3
+        },
+    ]
 }
 
 # Header for authorisation
@@ -20,3 +34,4 @@ headers = {
 }
 
 r = post(url, headers=headers, json=json)
+print(r)
