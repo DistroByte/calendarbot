@@ -1,0 +1,18 @@
+{
+    "name": "checkfree",
+    "type": 1,
+    "description": "Check if rooms are free during any period.",
+    "options": [
+        {
+            "name": "rooms",
+            "description": "The room codes to query, separated by space and case-insensitive.",
+            "type": 3,
+            "required": true
+        },
+        {
+            "name": "hour",
+            "description": "The hour to query, in 24-hour time. Defaults to now.",
+            "type": 3
+        }
+    ]
+}

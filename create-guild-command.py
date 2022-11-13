@@ -10,19 +10,19 @@ url = 'https://discord.com/api/v10/applications/' + application_id + '/guilds/' 
 
 # Command goes here
 json = {
-    "name": "timetable",
+    "name": "checkfree",
     "type": 1,
-    "description": "Get your timetable for the day.",
+    "description": "Check if rooms are free during any period.",
     "options": [
         {
-            "name": "course",
-            "description": "The course code to query.",
+            "name": "rooms",
+            "description": "The room codes to query, separated by space and case-insensitive.",
             "type": 3,
             "required": True
         },
         {
-            "name": "day",
-            "description": "The day to query. Defaults to today.",
+            "name": "hour",
+            "description": "The hour to query. Defaults to now.",
             "type": 3
         },
     ]
