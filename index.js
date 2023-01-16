@@ -56,6 +56,13 @@ client.on('interactionCreate', async interaction => {
 
         const courseCode = interaction.options.getString('course').split(' ')[0].toUpperCase();
 
+        const courseID = await Timetable.FetchCourseCodeIdentity(courseCode).catch(err => {/*console.log(err)*/});
+        if (!courseID) {
+            let embed = DiscordFunctions.buildErrorEmbed(commandName, `No courses found for code \`${courseCode}\``, `Did you spell it correctly?`);
+            await interaction.reply({ embeds: [embed]});
+            return
+        };
+
         const shortDay = ['mon', 'tue', 'wed', 'thu', 'fri']
         const longDay = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
         let day = Timetable.FetchDay();
@@ -74,33 +81,57 @@ client.on('interactionCreate', async interaction => {
             }
         }
 
-        Timetable.FetchRawTimetableData(courseCode, day, new Date('2022-11-28'))
+        Timetable.FetchRawTimetableData(courseID, day, new Date('2022-11-8'))
             .then(async (res) => {
-                res = res[0].CategoryEvents;
-                //console.log(res)
+                // // identify any errors that might arrive at this point.
+                // if (!res) {
+                //     let embed = DiscordFunctions.buildErrorEmbed(commandName, `A big fucking error happened. Don't do that.`)
+                //     await interaction.reply({ embeds: [embed]})
+                //     return
+                // };
+                res = res[0];
+                //const CourseName = res[0].Name;
 
-                if (res.length < 1) {
-                    let embed = DiscordFunctions.buildErrorEmbed(commandName, `No events found for ${courseCode}.`)
+
+                if (res.CategoryEvents.length < 1) {
+                    let embed = DiscordFunctions.buildErrorEmbed(commandName, `No events found for ${res.Name}`)
                     await interaction.reply({ embeds: [embed] });
                     return
                 }
 
                 let embed = new Discord.EmbedBuilder()
-                    .setTitle(`${courseCode} Timetable for ${day}`)
+                    .setTitle(`${res.Name} Timetable for ${day}`)
                     .setColor('Green');
 
-                embed = DiscordFunctions.parseEvents(res, embed)
+                embed = DiscordFunctions.parseEvents(res.CategoryEvents, embed)
 
                 await interaction.reply({ embeds: [embed] });
             });
     }
 
     if (commandName === 'checkfree') {
-        embedsToSend = RoomCheck.checkFree(interaction)
+        let errorEmbed = DiscordFunctions.buildErrorEmbed(commandName);
+        const startHour = interaction.options.getString('hour');
+        const roomCodes = interaction.options.getString('rooms').toUpperCase().split(' ');
+
+
+        embedsToSend = await RoomCheck.checkFree(errorEmbed, roomCodes, startHour);
 
         await interaction.reply(
             {embeds: embedsToSend}
-        )
+        );
+    }
+
+    if (commandName === 'labfree') {
+        let errorEmbed = DiscordFunctions.buildErrorEmbed(commandName);
+        const startHour = interaction.options.getString('hour');
+        const roomCodes = ['lg25', 'lg26', 'lg27', 'l101', 'l114', 'l125', 'l128', 'l129']
+        
+        embedsToSend = await RoomCheck.checkFree(errorEmbed, roomCodes, startHour);
+
+        await interaction.reply(
+            {embeds: embedsToSend}
+        );
     }
     /*
     else {

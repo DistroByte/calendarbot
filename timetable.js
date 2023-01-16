@@ -32,7 +32,6 @@ function dbprint(label, output) {
     }
 }
 
-
 function StartOfWeek(DateToFetch) {
     var CurrentDate = DateToFetch
     var DateDifference = CurrentDate.getDate() - CurrentDate.getDay() + (CurrentDate.getDay() === 0 ? -6 : 1);
@@ -94,7 +93,8 @@ async function FetchCourseCodeIdentity(Query) {
     return output
 }
 
-async function FetchRawTimetableData(CodesToQuery, Day, DateToFetch = new Date(), Mode, StartTime, EndTime) {
+// rewrite this so the identities are obtained before they go in. currently location works this way anyway
+async function FetchRawTimetableData(IdentitiesToQuery, Day, DateToFetch = new Date(), Mode, StartTime, EndTime) {
     /*  two modes, 'programme' and 'location'. programme is the default.
         programme expects one string or a list with one string, location can take a list of any size.
         times are set to 8:00 - 22:00 if StartTime is not defined. */
@@ -102,17 +102,7 @@ async function FetchRawTimetableData(CodesToQuery, Day, DateToFetch = new Date()
         Mode = 'programme';
     };
 
-    let IdentitiesToQuery
-    let CategoryIdentity
-
-    if (Mode == 'location') {
-        CategoryIdentity = LocationIdentity;
-    };
-
-    if (Mode == 'programme') {
-        CategoryIdentity = ProgrammeIdentity;
-        IdentitiesToQuery = await FetchCourseCodeIdentity(CodesToQuery);
-    };
+    let CategoryIdentity = (Mode == 'programme') ? ProgrammeIdentity : LocationIdentity;
 
     let output = new Promise(function (resolve, reject) {
         const ReqPayload = {
@@ -125,11 +115,17 @@ async function FetchRawTimetableData(CodesToQuery, Day, DateToFetch = new Date()
 
         Request(ReqPayload) // Send the HTTP Request
             .then(async function (res_body) {
-                await Promise.all(res_body[0].CategoryEvents.map(async event => {
-                    let moduleName = await FetchModuleNameFromCode(event.Name.slice(0, 5));
-                    return event.Name = moduleName;
-                }));
-
+                //     await Promise.all(res_body[0].CategoryEvents.map(async event => {
+                //         let moduleName = await FetchModuleNameFromCode(event.Name.slice(0, 5));
+                //         return event.Name = moduleName;
+                //     }));
+                
+                for (let currentIndex = 0; currentIndex < res_body.length; currentIndex++) {
+                    await Promise.all(res_body[parseInt(currentIndex)].CategoryEvents.map(async event => {
+                        let moduleName = await FetchModuleNameFromCode(event.Name.slice(0, 5));
+                        return event.Name = moduleName;
+                    }));
+                };
                 resolve(res_body)
             })
             .catch(function (err) { // Catch any errors

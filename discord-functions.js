@@ -1,6 +1,8 @@
 const Discord = require('discord.js')
 
-function parseEvents(eventList, embed) {
+function parseEvents(eventList, embed, addLocation) {
+    // location determines whether or not to add the location
+    
     eventList.sort(function (a, b) {
         var aDate = new Date(a.StartDateTime).getTime(), bDate = new Date(b.StartDateTime).getTime();
         return aDate - bDate;

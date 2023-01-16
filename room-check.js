@@ -42,14 +42,10 @@ function findRoomIdentities(codesToQuery) {
     return [rooms, invalidRooms]
 };
 
-function checkFree(interaction) {
-    const { commandName } = interaction
+async function checkFree(errorEmbed, roomCodes, startHour) {
     let outputEmbed = new Discord.EmbedBuilder()
         .setColor('Green');
 
-    let errorEmbed = DiscordFunctions.buildErrorEmbed(commandName)
-
-    const roomCodes = (invoked) ? interaction.options.rooms.toUpperCase().split(' ') : interaction.options.getString('rooms').toUpperCase().split(' ');
     const inputCodes = findRoomIdentities(roomCodes);
 
     const validRooms = Object.values(inputCodes[0]);
@@ -63,7 +59,6 @@ function checkFree(interaction) {
         errorEmbed = errorEmbed.addErrorField(`These rooms were not found in the GLA database`, `${invalidRooms.join(', ')}`);
     };
 
-    let startHour = (invoked) ? interaction.options.hour : interaction.options.getString('hour');
     if (!(startHour in Discord.range(0, 23))) {
         if (startHour != null) {
             errorEmbed = errorEmbed.addErrorField('Given hour was invalid. Using current time.')
@@ -77,54 +72,45 @@ function checkFree(interaction) {
 
     let currentDay = Timetable.FetchDay();
 
-    output = []
-
-    Timetable.FetchRawTimetableData(validRooms, 'Tuesday', new Date('2022-11-29'), 'location', startHour, endHour)
+    await Timetable.FetchRawTimetableData(validRooms, currentDay, new Date(), 'location', startHour, endHour)
         .then(async (res) => {
-            //console.log(res[0], '\nthe stuff goes here\n\n')
-            //console.log(res)
-
             let freeRooms = []
+            let foundEvents = {}
 
             res.forEach(roomObject => {
                 //console.log(roomObject)
                 let roomName = roomObject.Name.split('.')[1]
                 let events = roomObject.CategoryEvents
-                console.log(roomName, events)
+                //console.log(roomName)
  
                 if (events.length > 0) {
-                    console.log('c')
+                    foundEvents[roomName] = []
+                    events.forEach(
+                        event => {
+                            foundEvents[roomName].push(event.Name)
+                        }
+                    )
                 } else {
                     freeRooms.push(roomName)
                 };
             });
 
-            /*
-            res.sort(function (a, b) {
-                var aDate = new Date(a.StartDateTime).getTime(), bDate = new Date(b.StartDateTime).getTime();
-                return aDate - bDate;
-            });
+            if (foundEvents != {}) {
+                //outputEmbed.addFields({ name: 'These events were found:' })
+                Object.entries(foundEvents).forEach(
+                    room => {
+                        outputEmbed.addFields({ name: room[0], value: room[1].join('\n'), inline: true})
+                    }
+                )
+            }  
 
-            res.forEach(module => {
-                const locations = module.Location.split(', ');
-                var locationArray = [];
-                locations.forEach(location => {
-                    locationArray.push(location.split('.')[1]);
-                })
-                output.push(
-                    {
-                        name: `${module.Name} (${module.Description})`,
-                        value: `Time: ${new Date(module.StartDateTime).toLocaleTimeString().slice(0, -6)}-${new Date(module.EndDateTime).toLocaleTimeString().slice(0, -6)}\nLocation: ${locationArray.join(', ')}`
-                    },
-                );
-            });
-            */
+            outputEmbed.addFields({ name: `These rooms are free from ${startHour}-${endHour}`, value: freeRooms.join('\n') })
         })
         .catch(() => {
-            
+           err => {
+            // Not sure if this needs handling.
+           } 
         });
-
-    //reply += `Checking rooms ${roomCodes} at hour ${startHour}, for today, which is ${currentDay}, or more technically ${currentDate}.`;
     const embedsToSend = (!errorEmbed.data.fields) ? [outputEmbed] : [errorEmbed, outputEmbed];
     return embedsToSend
 };
