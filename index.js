@@ -123,10 +123,11 @@ const client = new Discord.Client({ intents: ['DIRECT_MESSAGES'] });
 client.on('ready', async () => {
   console.log(`${client.user.username} is online!`);
 
-  const userIDs = ['180375991133143040', '798999606288973824', '196704710072205313', '168784878681325569', '747920741638471681', '223814642080677888', '343794669492109312', '354654294269624320', '424297185950302208', '228036177817632770', '757567277909672028', '625611592024981525', '206132779866390528'];
-  const userCourses = ['CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3'];
+  const userIDs = ['180375991133143040', '798999606288973824', '196704710072205313', '168784878681325569', '747920741638471681', '223814642080677888', '343794669492109312', '354654294269624320', '424297185950302208', '228036177817632770', '757567277909672028', '625611592024981525', '206132779866390528', '446354264478973952', '315217872005627914', '964202467095093298', '325310653130735618', '984912239817547846'];
+  const userCourses = ['CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'COMSCI2', 'COMSCI1', 'COMSCI1', 'COMSCI1'];
   //const userIDs = ['180375991133143040']
   //const userCourses = ['CASE3']
+
   let users = [];
   for await (user of userIDs) {
     users.push(await client.users.fetch(user));
@@ -135,10 +136,10 @@ client.on('ready', async () => {
   scheduler.scheduleJob('0 6 * * *', () => {
     users.forEach(user => {
       try {
-      morningUpdate(user, userCourses[userIDs.indexOf(user.id)]);
-      } catch (err) {
-        console.log(err);
-      }
+        morningUpdate(user, userCourses[userIDs.indexOf(user.id)]);
+        } catch (err) {
+          console.log(err, user.id);
+        }
     });
   })
   morningUpdate(users[0], 'CASE3');
