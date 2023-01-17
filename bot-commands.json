@@ -1,0 +1,55 @@
+[
+    {
+        "name": "checkfree",
+        "type": 1,
+        "description": "Check if rooms are free during any period.",
+        "options": [
+            {
+                "name": "rooms",
+                "description": "The room codes to query, separated by space and case-insensitive.",
+                "type": 3,
+                "required": true
+            },
+            {
+                "name": "hour",
+                "description": "The hour to query, in 24-hour time. Defaults to now.",
+                "type": 3
+            }
+        ]
+    },
+    {
+        "name": "labfree",
+        "type": 1,
+        "description": "Check if the labs in the McNulty building are free during any period.",
+        "options": [
+            {
+                "name": "hour",
+                "description": "The hour to query, in 24-hour time. Defaults to now.",
+                "type": 3
+            }
+        ]
+    },
+    {
+        "name": "timetable",
+        "type": 1,
+        "description": "Find a timetable for a course and day",
+        "options": [
+            {
+                "name": "course",
+                "description": "The code for the course you want to query. Case insensitive.",
+                "type": 3,
+                "required": true
+            },
+            {
+                "name": "day",
+                "description": "The day of this week to check for. Defaults to today.",
+                "type": 3
+            }
+        ]
+    },
+    {
+        "name": "ping",
+        "type": 1,
+        "description": "Check if the bot is currently alive."
+    }
+]
