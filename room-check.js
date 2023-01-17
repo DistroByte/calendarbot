@@ -86,7 +86,7 @@ async function checkFree(errorEmbed, roomCodes, startHour) {
         })
         .catch(() => {
             err => {
-                console.err(err)
+                console.error(err)
             } 
         });
     const embedsToSend = (!errorEmbed.data.fields) ? [outputEmbed] : [errorEmbed, outputEmbed];

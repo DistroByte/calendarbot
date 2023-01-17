@@ -21,6 +21,7 @@ client.on('ready', async () => {
   const userIDs = ['180375991133143040', '798999606288973824', '196704710072205313', '168784878681325569', '747920741638471681', '223814642080677888', '343794669492109312', '354654294269624320', '424297185950302208', '228036177817632770', '757567277909672028', '625611592024981525', '206132779866390528', '446354264478973952', '315217872005627914', '964202467095093298', '325310653130735618', '984912239817547846'];
   const userCourses = ['CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'COMSCI2', 'COMSCI1', 'COMSCI1', 'COMSCI1'];
   const channelIDs = ['1023659560176726077']
+  const channelCourses = ['COMSCI1']
 
   let users = [];
   for await (user of userIDs) {
@@ -39,15 +40,15 @@ client.on('ready', async () => {
       try {
         morningUpdate(user, userCourses[userIDs.indexOf(user.id)]);
         } catch (err) {
-          console.log(err, user.id);
+          console.error(err, user.id);
         }
     });
 
     channels.forEach(channel => {
       try {
-        morningUpdate(channel, userCourses[userIDs.indexOf(channel.id)]);
+        morningUpdate(channel, channelCourses[channelIDs.indexOf(channel.id)]);
       } catch (err) {
-        console.log(err, channel.id);
+        console.error(err, channel.id);
       }
     });
   })
@@ -70,7 +71,7 @@ client.on('interactionCreate', async interaction => {
 
         const courseCode = interaction.options.getString('course').split(' ')[0].toUpperCase();
 
-        const courseID = await Timetable.FetchCourseCodeIdentity(courseCode).catch(err => {/*console.err(err)*/});
+        const courseID = await Timetable.FetchCourseCodeIdentity(courseCode).catch(err => {/*console.error(err)*/});
         if (!courseID) {
             let embed = DiscordFunctions.buildErrorEmbed(commandName, `No courses found for code \`${courseCode}\``, `Did you spell it correctly?`);
             await interaction.reply({ embeds: [embed]});
@@ -158,11 +159,13 @@ client.on('interactionCreate', async interaction => {
  * @param {Discord.User} user
  * @param {String} course
  */
-const morningUpdate = function (user, course) {
+const morningUpdate = async function (user, course) {
     if (!debug) {
-        const day = Timetable.Weekdays[(new Date().getDay() - 1)];
-        Timetable.FetchRawTimetableData(course, day, new Date())
+        const day = Timetable.FetchDay();
+        const courseID = await Timetable.FetchCourseCodeIdentity(course)
+        Timetable.FetchRawTimetableData(courseID, day, new Date())
             .then(async (res) => {
+                //if (res.length < 1) return
                 res = res[0].CategoryEvents;
 
                 if (res.length < 1) return
