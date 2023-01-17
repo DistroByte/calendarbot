@@ -18,10 +18,11 @@ function dbprint(string) {
 client.on('ready', async () => {
     console.log(`${client.user.username} is online!`);
 
-    const userIDs = ['180375991133143040', '798999606288973824', '196704710072205313', '168784878681325569', '747920741638471681', '223814642080677888', '343794669492109312', '354654294269624320', '424297185950302208', '228036177817632770', '757567277909672028', '625611592024981525', '206132779866390528'];
-    const userCourses = ['CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3'];
+    //const userIDs = ['180375991133143040', '798999606288973824', '196704710072205313', '168784878681325569', '747920741638471681', '223814642080677888', '343794669492109312', '354654294269624320', '424297185950302208', '228036177817632770', '757567277909672028', '625611592024981525', '206132779866390528'];
+    //const userCourses = ['CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3'];
     //const userIDs = ['180375991133143040']
     //const userCourses = ['CASE3']
+
     let users = [];
     for await (user of userIDs) {
         users.push(await client.users.fetch(user));
@@ -36,7 +37,7 @@ client.on('ready', async () => {
             }
         });
     })
-    morningUpdate(users[0], 'CASE3');
+    //morningUpdate(users[0], 'COMSCI1');
 });
 
 client.on('interactionCreate', async interaction => {
@@ -143,11 +144,13 @@ client.on('interactionCreate', async interaction => {
  * @param {Discord.User} user
  * @param {String} course
  */
-const morningUpdate = function (user, course) {
+const morningUpdate = async function (user, course) {
     if (!debug) {
-        const day = Timetable.Weekdays[(new Date().getDay() - 1)];
-        Timetable.FetchRawTimetableData(course, day, new Date())
+        const day = Timetable.Weekdays[(new Date().getDay())];
+        const courseID = await Timetable.FetchCourseCodeIdentity(course)
+        Timetable.FetchRawTimetableData(courseID, day, new Date())
             .then(async (res) => {
+                //if (res.length < 1) return
                 res = res[0].CategoryEvents;
 
                 if (res.length < 1) return

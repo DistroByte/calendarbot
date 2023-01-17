@@ -91,7 +91,7 @@ async function FetchCourseCodeIdentity(Query) {
     return output
 }
 
-// rewrite this so the identities are obtained before they go in. currently location works this way anyway
+// rewrote this so the identities are obtained before they go in. currently location works this way anyway
 async function FetchRawTimetableData(IdentitiesToQuery, Day, DateToFetch = new Date(), Mode, StartTime, EndTime) {
     /*  two modes, 'programme' and 'location'. programme is the default.
         programme expects one string or a list with one string, location can take a list of any size.
