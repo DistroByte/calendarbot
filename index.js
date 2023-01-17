@@ -18,8 +18,8 @@ function dbprint(string) {
 client.on('ready', async () => {
     console.log(`${client.user.username} is online!`);
 
-    //const userIDs = ['180375991133143040', '798999606288973824', '196704710072205313', '168784878681325569', '747920741638471681', '223814642080677888', '343794669492109312', '354654294269624320', '424297185950302208', '228036177817632770', '757567277909672028', '625611592024981525', '206132779866390528'];
-    //const userCourses = ['CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3'];
+    const userIDs = ['180375991133143040', '798999606288973824', '196704710072205313', '168784878681325569', '747920741638471681', '223814642080677888', '343794669492109312', '354654294269624320', '424297185950302208', '228036177817632770', '757567277909672028', '625611592024981525', '206132779866390528'];
+    const userCourses = ['CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3', 'CASE3'];
     //const userIDs = ['180375991133143040']
     //const userCourses = ['CASE3']
 
@@ -33,11 +33,11 @@ client.on('ready', async () => {
             try {
                 morningUpdate(user, userCourses[userIDs.indexOf(user.id)]);
             } catch (err) {
-                console.err(err);
+                console.error(err);
             }
         });
     })
-    //morningUpdate(users[0], 'COMSCI1');
+    morningUpdate(users[0], 'CASE3');
 });
 
 client.on('interactionCreate', async interaction => {
@@ -56,7 +56,7 @@ client.on('interactionCreate', async interaction => {
 
         const courseCode = interaction.options.getString('course').split(' ')[0].toUpperCase();
 
-        const courseID = await Timetable.FetchCourseCodeIdentity(courseCode).catch(err => {/*console.err(err)*/});
+        const courseID = await Timetable.FetchCourseCodeIdentity(courseCode).catch(err => {/*console.error(err)*/});
         if (!courseID) {
             let embed = DiscordFunctions.buildErrorEmbed(commandName, `No courses found for code \`${courseCode}\``, `Did you spell it correctly?`);
             await interaction.reply({ embeds: [embed]});
@@ -146,7 +146,7 @@ client.on('interactionCreate', async interaction => {
  */
 const morningUpdate = async function (user, course) {
     if (!debug) {
-        const day = Timetable.Weekdays[(new Date().getDay())];
+        const day = Timetable.FetchDay();
         const courseID = await Timetable.FetchCourseCodeIdentity(course)
         Timetable.FetchRawTimetableData(courseID, day, new Date())
             .then(async (res) => {

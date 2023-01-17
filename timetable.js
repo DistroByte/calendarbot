@@ -123,7 +123,7 @@ async function FetchRawTimetableData(IdentitiesToQuery, Day, DateToFetch = new D
                         await FetchModuleNameFromCode(event.Name.slice(0, 5)).then(moduleName => {
                             event.Name = moduleName
                         }).catch(err => {
-                            console.err(err, `(${event.Name})`)
+                            console.error(err, `(${event.Name})`)
                         });
                         //return event.Name = moduleName;
                     }));
@@ -131,7 +131,7 @@ async function FetchRawTimetableData(IdentitiesToQuery, Day, DateToFetch = new D
                 resolve(res_body)
             })
             .catch(function (err) { // Catch any errors
-                console.err(err)
+                console.error(err)
                 reject(err)
             });
     })
