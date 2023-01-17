@@ -62,7 +62,6 @@ function ConstructRequestBody(Day, DateToFetch, Identities, StartTime, EndTime) 
     };
 
     RequestBodyTemplate['CategoryIdentities'] = Identities
-
     return RequestBodyTemplate
 }
 
@@ -79,9 +78,8 @@ async function FetchCourseCodeIdentity(Query) {
         Request(ReqPayload) // Send the HTTP Request
             .then(function (res_body) {
                 let Results = res_body['Results']
-
                 if (Results.length == 0) {
-                    reject('Course identity not found with supplied course code.')
+                    reject(`Course identity ${Query} not found with supplied course code.`)
                 } else {
                     resolve(res_body['Results'][0]['Identity'])
                 }
@@ -122,13 +120,18 @@ async function FetchRawTimetableData(IdentitiesToQuery, Day, DateToFetch = new D
                 
                 for (let currentIndex = 0; currentIndex < res_body.length; currentIndex++) {
                     await Promise.all(res_body[parseInt(currentIndex)].CategoryEvents.map(async event => {
-                        let moduleName = await FetchModuleNameFromCode(event.Name.slice(0, 5));
-                        return event.Name = moduleName;
+                        await FetchModuleNameFromCode(event.Name.slice(0, 5)).then(moduleName => {
+                            event.Name = moduleName
+                        }).catch(err => {
+                            console.err(err, `(${event.Name})`)
+                        });
+                        //return event.Name = moduleName;
                     }));
                 };
                 resolve(res_body)
             })
             .catch(function (err) { // Catch any errors
+                console.err(err)
                 reject(err)
             });
     })

@@ -9,7 +9,8 @@ const DiscordFunctions = require('./discord-functions.js')
 
 const client = new Discord.Client({ intents: [Discord.GatewayIntentBits.DirectMessages] });
 
-const debug = true
+// Disables the morning update. Oh, and logging I guess.
+const debug = false
 function dbprint(string) {
     if (debug) console.log(string);
 };
@@ -31,7 +32,7 @@ client.on('ready', async () => {
             try {
                 morningUpdate(user, userCourses[userIDs.indexOf(user.id)]);
             } catch (err) {
-                console.log(err);
+                console.err(err);
             }
         });
     })
@@ -49,14 +50,12 @@ client.on('interactionCreate', async interaction => {
         );
     }
 
-
     if (commandName === 'timetable') {
-
-        console.log(`${interaction.user.username} used ${interaction.commandName}`)
+        //console.log(`${interaction.user.username} used ${interaction.commandName}`)
 
         const courseCode = interaction.options.getString('course').split(' ')[0].toUpperCase();
 
-        const courseID = await Timetable.FetchCourseCodeIdentity(courseCode).catch(err => {/*console.log(err)*/});
+        const courseID = await Timetable.FetchCourseCodeIdentity(courseCode).catch(err => {/*console.err(err)*/});
         if (!courseID) {
             let embed = DiscordFunctions.buildErrorEmbed(commandName, `No courses found for code \`${courseCode}\``, `Did you spell it correctly?`);
             await interaction.reply({ embeds: [embed]});
@@ -81,7 +80,7 @@ client.on('interactionCreate', async interaction => {
             }
         }
 
-        Timetable.FetchRawTimetableData(courseID, day, new Date('2022-11-8'))
+        Timetable.FetchRawTimetableData(courseID, day, new Date())
             .then(async (res) => {
                 // // identify any errors that might arrive at this point.
                 // if (!res) {
@@ -90,9 +89,6 @@ client.on('interactionCreate', async interaction => {
                 //     return
                 // };
                 res = res[0];
-                //const CourseName = res[0].Name;
-
-
                 if (res.CategoryEvents.length < 1) {
                     let embed = DiscordFunctions.buildErrorEmbed(commandName, `No events found for ${res.Name}`)
                     await interaction.reply({ embeds: [embed] });
@@ -100,7 +96,7 @@ client.on('interactionCreate', async interaction => {
                 }
 
                 let embed = new Discord.EmbedBuilder()
-                    .setTitle(`${res.Name} Timetable for ${day}`)
+                    .setTitle(`${res.Name} timetable for ${day}`)
                     .setColor('Green');
 
                 embed = DiscordFunctions.parseEvents(res.CategoryEvents, embed)
@@ -114,7 +110,6 @@ client.on('interactionCreate', async interaction => {
         const startHour = interaction.options.getString('hour');
         const roomCodes = interaction.options.getString('rooms').toUpperCase().split(' ');
 
-
         embedsToSend = await RoomCheck.checkFree(errorEmbed, roomCodes, startHour);
 
         await interaction.reply(
@@ -125,8 +120,8 @@ client.on('interactionCreate', async interaction => {
     if (commandName === 'labfree') {
         let errorEmbed = DiscordFunctions.buildErrorEmbed(commandName);
         const startHour = interaction.options.getString('hour');
-        const roomCodes = ['lg25', 'lg26', 'lg27', 'l101', 'l114', 'l125', 'l128', 'l129']
-        
+        const roomCodes = ['LG25', 'LG26', 'LG27', 'L101', 'L114', 'L125', 'L128', 'L129']
+
         embedsToSend = await RoomCheck.checkFree(errorEmbed, roomCodes, startHour);
 
         await interaction.reply(
@@ -169,4 +164,4 @@ const morningUpdate = function (user, course) {
     }
 }
 
-client.login(process.env.TOKEN);
+client.login(process.env.BOT_TOKEN);

@@ -2,24 +2,6 @@ const Discord = require('discord.js')
 const DiscordFunctions = require('./discord-functions.js')
 const Timetable = require('./timetable.js')
 
-const invoked = (require.main == module) ? true : false;
-
-// for running directly
-function main() {
-    let interaction = {
-        options: {
-            rooms: null,
-            hour: null
-        }
-    };
-    const args = process.argv.slice(2);
-    interaction.options.rooms = args[0];
-    interaction.options.hour = args[1];
-
-    output = checkFree(interaction);
-    console.log(output);
-};
-
 function timeToString(time) {
     time = '0' + time.toString() + ':00';
     time = time.slice(-5);
@@ -43,10 +25,8 @@ function findRoomIdentities(codesToQuery) {
 };
 
 async function checkFree(errorEmbed, roomCodes, startHour) {
-    let outputEmbed = new Discord.EmbedBuilder()
-        .setColor('Green');
-
-    const inputCodes = findRoomIdentities(roomCodes);
+    // roomCodes must be a list of strings
+    const inputCodes = await findRoomIdentities(roomCodes);
 
     const validRooms = Object.values(inputCodes[0]);
     const invalidRooms = inputCodes[1];
@@ -68,20 +48,19 @@ async function checkFree(errorEmbed, roomCodes, startHour) {
 
     let endHour = timeToString(parseInt(startHour) + 1);
     startHour = timeToString(startHour);
-    outputEmbed.setTitle(`Checking rooms for ${startHour}`)
 
-    let currentDay = Timetable.FetchDay();
+    let outputEmbed = new Discord.EmbedBuilder()
+        .setColor('Green')
+        .setTitle(`Checking rooms for ${startHour}`);
 
-    await Timetable.FetchRawTimetableData(validRooms, currentDay, new Date(), 'location', startHour, endHour)
+    await Timetable.FetchRawTimetableData(validRooms, Timetable.FetchDay(), new Date(), 'location', startHour, endHour)
         .then(async (res) => {
             let freeRooms = []
             let foundEvents = {}
 
             res.forEach(roomObject => {
-                //console.log(roomObject)
                 let roomName = roomObject.Name.split('.')[1]
                 let events = roomObject.CategoryEvents
-                //console.log(roomName)
  
                 if (events.length > 0) {
                     foundEvents[roomName] = []
@@ -96,7 +75,6 @@ async function checkFree(errorEmbed, roomCodes, startHour) {
             });
 
             if (foundEvents != {}) {
-                //outputEmbed.addFields({ name: 'These events were found:' })
                 Object.entries(foundEvents).forEach(
                     room => {
                         outputEmbed.addFields({ name: room[0], value: room[1].join('\n'), inline: true})
@@ -107,9 +85,9 @@ async function checkFree(errorEmbed, roomCodes, startHour) {
             outputEmbed.addFields({ name: `These rooms are free from ${startHour}-${endHour}`, value: freeRooms.join('\n') })
         })
         .catch(() => {
-           err => {
-            // Not sure if this needs handling.
-           } 
+            err => {
+                console.err(err)
+            } 
         });
     const embedsToSend = (!errorEmbed.data.fields) ? [outputEmbed] : [errorEmbed, outputEmbed];
     return embedsToSend
@@ -117,10 +95,6 @@ async function checkFree(errorEmbed, roomCodes, startHour) {
 
 exported = {
     checkFree
-};
-
-if (invoked) {
-    main()
 };
 
 module.exports = exported;
