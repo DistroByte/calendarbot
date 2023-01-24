@@ -100,12 +100,6 @@ client.on('interactionCreate', async interaction => {
     
     Timetable.fetchRawTimetableData(courseID, day, new Date())
       .then(async (res) => {
-        // // identify any errors that might arrive at this point.
-        // if (!res) {
-        //     let embed = DiscordFunctions.buildErrorEmbed(commandName, `A big fucking error happened. Don't do that.`)
-        //     await interaction.reply({ embeds: [embed]})
-        //     return
-        // };
         res = res[0];
         if (res.CategoryEvents.length < 1) {
           let embed = DiscordFunctions.buildErrorEmbed(commandName, `No events found for ${res.Name}`)
@@ -128,7 +122,7 @@ client.on('interactionCreate', async interaction => {
     const startHour = interaction.options.getString('hour');
     const roomCodes = interaction.options.getString('rooms').toUpperCase().split(' ');
 
-    embedsToSend = await RoomCheck.checkFree(errorEmbed, roomCodes, startHour);
+    const embedsToSend = await RoomCheck.checkFree(errorEmbed, roomCodes, startHour);
 
     await interaction.reply(
       { embeds: embedsToSend }
@@ -140,21 +134,12 @@ client.on('interactionCreate', async interaction => {
     const startHour = interaction.options.getString('hour');
     const roomCodes = ['LG25', 'LG26', 'LG27', 'L101', 'L114', 'L125', 'L128', 'L129']
 
-    embedsToSend = await RoomCheck.checkFree(errorEmbed, roomCodes, startHour);
+    const embedsToSend = await RoomCheck.checkFree(errorEmbed, roomCodes, startHour);
 
     await interaction.reply(
       { embeds: embedsToSend }
     );
   }
-  /*
-  else {
-      let embed = DiscordFunctions.buildErrorEmbed(commandName, `This command doesn't seem to exist.`);
-
-      await interaction.reply(
-          {embeds: [embed]}
-      );
-  };
-  */
 });
 
 /**
@@ -180,7 +165,7 @@ const morningUpdate = async function (user, course, offset) {
         embed = DiscordFunctions.parseEvents(res, embed)
         embed.setDescription(`Times shown are in GMT+1`);
         
-        user.send({ embeds: [embed] });
+        user.send({ embeds: [embed] }).catch(console.error);
       }).catch(console.error());
 }
 

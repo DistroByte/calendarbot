@@ -1,57 +1,43 @@
 require('dotenv').config();
-
-const fs = require('fs');
-const readline = require('readline');
-const input = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
+const { readFileSync } = require('fs');
+const { exit } = require('process');
 
 const guildRegisterURL = 'https://discord.com/api/v10/applications/' + process.env.APPLICATION_ID + '/guilds/' + process.env.GUILD_ID + '/commands'
 const appRegisterURL = 'https://discord.com/api/v10/applications/' + process.env.APPLICATION_ID + '/commands'
-
 const headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Bot ' + process.env.BOT_TOKEN
 }
 
-console.log('Make sure command-ids.txt is present in the current directory.')
-input.question('Delete a Guild or Application command? [G/a] ', userInput => {
-        input.close();
-        userInput = userInput.toUpperCase()
-        if (userInput == 'G' || userInput == '') {
-            console.log(`Deleting commands from guild`)
-            main()
-        } else if (userInput == 'A') {
-            console.log(`Deleting commands globally, remember that Discord rate limits this`)
-            main(true)
-        } else {
-            console.log(`Invalid response, exiting`)
-        }
-})
+console.log('Make sure command-ids.txt is present in the current directory before you try running this.')
+const mode = (process.argv.includes('-g')) && 'guild' || 'app';
+if (process.argv.length < 3) console.error('No commandline arguments specified, defaulting to application.\nUse -a to specify application, and -g to specify guild.');
+(mode == 'guild') && console.log(`Registering commands to guild`) || console.log(`Registering application commands, remember that Discord rate limits this`);
 
-
-function main(global) {
-    const URL = (global) ? appRegisterURL : guildRegisterURL;
-    const commandIDs = fs.readFileSync('./command-ids.txt', 'utf-8').split(/\s+/)
-    commandIDs.forEach(
-        commandID => {
-            fetch(`${URL}\\${commandID}`, {
-                method: 'DELETE',
-                headers: headers
-            }).then(
-                res => {
-                    if (res.ok) {
-                        console.log(`Successfully deleted ${commandID}, response ${res.status} (${res.statusText})`)
-                    } else {
-                        console.log(`Failed to delete ${commandID}, response ${res.status} (${res.statusText})`)
-                    };
-                }
-            ).catch(
-                err => {
-                    console.error(`Failed to make request for ${commandID} (${err})`)
-                }
-            )
-        }
-    )
+const URL = (mode == 'app') ? appRegisterURL : guildRegisterURL;
+const commandIDs = readFileSync('./command-ids.txt', 'utf-8').split(/\s+/)
+if (commandIDs[0] === '') {
+    console.log('It looks like there\'s no commands to delete in command-ids.txt, terminating')
+    exit(1);
 }
+
+commandIDs.forEach(
+    commandID => {
+        fetch(`${URL}\\${commandID}`, {
+            method: 'DELETE',
+            headers: headers
+        }).then(
+            res => {
+                if (res.ok) {
+                    console.log(`Successfully deleted ${commandID}, response ${res.status} (${res.statusText})`)
+                } else {
+                    console.log(`Failed to delete ${commandID}, response ${res.status} (${res.statusText})`)
+                };
+            }
+        ).catch(
+            err => {
+                console.error(`Failed to make request for ${commandID} (${err})`)
+            }
+        )
+    }
+)

@@ -1,56 +1,37 @@
 require('dotenv').config();
-const commandJSON = require('./bot-commands.json')
-
-const readline = require('readline');
-const input = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
 
 const guildRegisterURL = 'https://discord.com/api/v10/applications/' + process.env.APPLICATION_ID + '/guilds/' + process.env.GUILD_ID + '/commands'
 const appRegisterURL = 'https://discord.com/api/v10/applications/' + process.env.APPLICATION_ID + '/commands'
-
 const headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Bot ' + process.env.BOT_TOKEN
 }
 
-input.question("Register to Guild or as Application commands? [G/a] ", userInput => {
-        input.close();
-        userInput = userInput.toUpperCase()
-        if (userInput == 'G' || userInput == '') {
-            console.log(`Registering commands to guild`)
-            main()
-        } else if (userInput == 'A') {
-            console.log(`Registering commands globally, remember that Discord rate limits this`)
-            main(true)
-        } else {
-            console.log(`Invalid response, exiting`)
-        }
-})
+const mode = (process.argv.includes('-g')) && 'guild' || 'app';
+if (process.argv.length < 3) console.error('No commandline arguments specified, defaulting to application.\nUse -a to specify application, and -g to specify guild.');
+(mode == 'guild') && console.log(`Registering commands to guild`) || console.log(`Registering application commands, remember that Discord rate limits this`);
 
-function main(global) {
-    const URL = (global) ? appRegisterURL : guildRegisterURL;
-    commandJSON.forEach(
-        commandData => {
-            //console.log(JSON.stringify(commandData))
-            fetch(URL, {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify(commandData)
-            }).then(
-                res => {
-                    if (res.ok) {
-                        console.log(`Successfully registered ${commandData.name}, response ${res.status} (${res.statusText})`)
-                    } else {
-                        console.log(`Failed to register ${commandData.name}, response ${res.status} (${res.statusText})`)
-                    };
-                }
-            ).catch(
-                err => {
-                    console.error(`Failed to make request for ${commandData.name} (${err})`)
-                }
-            )
-        }
-    )
-}
+const URL = (mode == 'app') ? appRegisterURL : guildRegisterURL;
+const commandJSON = require('./bot-commands.json')
+commandJSON.forEach(
+    commandData => {
+        //console.log(JSON.stringify(commandData))
+        fetch(URL, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(commandData)
+        }).then(
+            res => {
+                if (res.ok) {
+                    console.log(`Successfully registered ${commandData.name}, response ${res.status} (${res.statusText})`)
+                } else {
+                    console.log(`Failed to register ${commandData.name}, response ${res.status} (${res.statusText})`)
+                };
+            }
+        ).catch(
+            err => {
+                console.error(`Failed to make request for ${commandData.name} (${err})`)
+            }
+        )
+    }
+)
