@@ -1,171 +1,177 @@
 const Request = require('request-promise')
 
-const Weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] // Used to fetch the index for a day
+const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] // Used to fetch the index for a day
 
-const LocationIdentity = '1e042cb1-547d-41d4-ae93-a1f2c3d34538'
-const ProgrammeIdentity = '241e4d36-60e0-49f8-b27e-99416745d98d'
+// Magic numbers, these are used to make API queries in the URIs
+// This one is used to make queries to a location and check events there
+const locationIdentity = '1e042cb1-547d-41d4-ae93-a1f2c3d34538'
+// This one is used to make queries for a programme/course to check events, and also to find ID of a course code.
+const programmeIdentity = '241e4d36-60e0-49f8-b27e-99416745d98d'
+// This is used to get a module's full title from the code.
+const moduleIdentity = '525fe79b-73c3-4b5c-8186-83c652b3adcc'
 
-function FetchDay() {
-    return Weekdays[(new Date().getDay())]
+// Fetch the current day, unless offset is defined. Positive goes forward, negative back.
+function fetchDay(offset) {
+  offset ??= 0;
+  return weekdays[((new Date().getDay()) + offset) % 7]
 };
 
-function ExtractTimeFromDate(DateObject = new Date()) {
-    const hour = DateObject.getHours();
-    const minute = DateObject.getMinutes();
-    return (hour + ':' + minute)
+// Gets current time in the syntax '2:24'. JS apparently doesn't have a native function for this.
+function extractTimeFromDate(DateObject = new Date()) {
+  const hour = DateObject.getHours();
+  const minute = DateObject.getMinutes();
+  return (hour + ':' + minute)
 };
 
-const ReqHeaders = {
-    'Authorization': 'basic T64Mdy7m[',
-    'Content-Type': 'application/json; charset=utf-8',
-    'credentials': 'include',
-    'Referer': 'https://opentimetable.dcu.ie/',
-    'Origin': 'https://opentimetable.dcu.ie/'
+const reqHeaders = {
+  'Authorization': 'basic T64Mdy7m[',
+  'Content-Type': 'application/json; charset=utf-8',
+  'credentials': 'include',
+  'Referer': 'https://opentimetable.dcu.ie/',
+  'Origin': 'https://opentimetable.dcu.ie/'
 }
 
-//debug stuff.
+// Debug doesn't disable or enable any features in timetable.js right now.
 const debug = false
-function dbprint(label, output) {
-    if (debug) {
-        output = (typeof (output) === 'object') && JSON.stringify(output);
-        console.log(label + '\n' + JSON.stringify(output) + '\n')
-    }
+function dbprint(string) {
+  if (debug) console.log(string);
 }
 
-function StartOfWeek(DateToFetch) {
-    var CurrentDate = DateToFetch
-    var DateDifference = CurrentDate.getDate() - CurrentDate.getDay() + (CurrentDate.getDay() === 0 ? -6 : 1);
+function startOfWeek(dateToFetch) {
+  var currentDate = new Date(dateToFetch)
+  var dateDifference = currentDate.getDate() - currentDate.getDay() + (currentDate.getDay() === 0 ? -6 : 1);
 
-    FirstDayInWeek = new Date(CurrentDate.setDate(DateDifference)).toISOString() // Convert our date to ISOString
-    const output = FirstDayInWeek.slice(0, -14).concat('T00:00:00.000Z')
-    return output
-    // Slice the date and add a time for midnight to the end
-    // Outputs: YYYY-MM-DDT00:00:00.000Z
+  firstDayInWeek = new Date(currentDate.setDate(dateDifference)).toISOString() // Convert our date to ISOString
+  const output = firstDayInWeek.slice(0, -14).concat('T00:00:00.000Z')
+  return output
+  // Slice the date and add a time for midnight to the end
+  // Outputs: YYYY-MM-DDT00:00:00.000Z
 }
 
-function ConstructRequestBody(Day, DateToFetch, Identities, StartTime, EndTime) {
-    let RequestBodyTemplate = require('./body.json')
+// Takes the JSON file and edits it according to the arguments, so it can be used for requests.
+function constructRequestBody(day, dateToFetch, identities, startTime, endTime) {
+  let requestBodyTemplate = require('./body.json')
 
-    if (typeof(Identities) == 'string') {
-        Identities = [Identities]
-    };
+  if (typeof (identities) == 'string') {
+    identities = [identities]
+  };
 
-    FinalDayNumber = Weekdays.indexOf(Day)
+  finalDayNumber = weekdays.indexOf(day)
 
-    RequestBodyTemplate['ViewOptions']['Weeks'][0]['FirstDayInWeek'] = StartOfWeek(DateToFetch)
-    RequestBodyTemplate['ViewOptions']['Days'][0]['Name'] = Day
-    RequestBodyTemplate['ViewOptions']['Days'][0]['DayOfWeek'] = FinalDayNumber
+  requestBodyTemplate['ViewOptions']['Weeks'][0]['FirstDayInWeek'] = startOfWeek(dateToFetch)
+  requestBodyTemplate['ViewOptions']['Days'][0]['Name'] = day
+  requestBodyTemplate['ViewOptions']['Days'][0]['DayOfWeek'] = finalDayNumber
 
-    if (typeof (StartTime) == 'string') {
-        RequestBodyTemplate['ViewOptions']['TimePeriods'][0]['StartTime'] = StartTime
-        RequestBodyTemplate['ViewOptions']['TimePeriods'][0]['EndTime'] = EndTime
-    };
+  if (typeof (startTime) == 'string') {
+    requestBodyTemplate['ViewOptions']['TimePeriods'][0]['startTime'] = startTime
+    requestBodyTemplate['ViewOptions']['TimePeriods'][0]['endTime'] = endTime
+  };
 
-    RequestBodyTemplate['CategoryIdentities'] = Identities
-    return RequestBodyTemplate
+  requestBodyTemplate['CategoryIdentities'] = identities
+  return requestBodyTemplate
 }
 
-async function FetchCourseCodeIdentity(Query) {
+// Makes a search on opentimetable for a keyword and returns the first courses result's identity
+async function fetchCourseCodeIdentity(query) {
+  var reqPayload = {
+    method: 'POST',
+    uri: `https://opentimetable.dcu.ie/broker/api/CategoryTypes/${programmeIdentity}/Categories/Filter?pageNumber=1&query=${query}`,
+    headers: reqHeaders,
+    json: true
+  };
 
-    var ReqPayload = {
-        method: 'POST',
-        uri: `https://opentimetable.dcu.ie/broker/api/CategoryTypes/${ProgrammeIdentity}/Categories/Filter?pageNumber=1&query=${Query}`,
-        headers: ReqHeaders,
-        json: true
+  const output = new Promise(function (resolve, reject) {
+    Request(reqPayload) // Send the HTTP Request
+      .then(function (res_body) {
+        let results = res_body['Results']
+        if (results.length == 0) {
+          reject(`Course identity ${query} not found with supplied course code.`)
+        } else {
+          resolve(res_body['Results'][0]['Identity'])
+        }
+      })
+      .catch(function (err) { // Catch any errors
+        reject(err)
+      });
+  })
+  return output
+}
+
+// This gets the raw timetable data for a given block of time. Feed it the identities, not the codes.
+async function fetchRawTimetableData(identitiesToQuery, day, dateToFetch = new Date(), mode, startTime, endTime) {
+  /*  two modes, 'programme' and 'location'. programme is the default.
+      programme expects one string or a list with one string, location can take a list of any size.
+      times are set to 8:00 - 22:00 if startTime is not defined. */
+  if (typeof (mode) != 'string') {
+    mode = 'programme';
+  };
+
+  const categoryIdentity = (mode == 'programme') ? programmeIdentity : locationIdentity;
+
+  let output = new Promise(function (resolve, reject) {
+    const reqPayload = {
+      method: 'POST',
+      uri: `https://opentimetable.dcu.ie/broker/api/categoryTypes/${categoryIdentity}/categories/events/filter`,
+      headers: reqHeaders,
+      body: constructRequestBody(day, dateToFetch, identitiesToQuery, startTime, endTime),
+      json: true
     };
 
-    const output = new Promise(function (resolve, reject) {
-        Request(ReqPayload) // Send the HTTP Request
-            .then(function (res_body) {
-                let Results = res_body['Results']
-                if (Results.length == 0) {
-                    reject(`Course identity ${Query} not found with supplied course code.`)
-                } else {
-                    resolve(res_body['Results'][0]['Identity'])
-                }
-            })
-            .catch(function (err) { // Catch any errors
-                reject(err)
+    Request(reqPayload) // Send the HTTP Request
+      .then(async function (res_body) {
+        //     await Promise.all(res_body[0].CategoryEvents.map(async event => {
+        //         let moduleName = await fetchModuleNameFromCode(event.Name.slice(0, 5));
+        //         return event.Name = moduleName;
+        //     }));
+
+        for (let currentIndex = 0; currentIndex < res_body.length; currentIndex++) {
+          await Promise.all(res_body[parseInt(currentIndex)].CategoryEvents.map(async event => {
+            await fetchModuleNameFromCode(event.Name.slice(0, 5)).then(moduleName => {
+              event.Name = moduleName
+            }).catch(err => {
+              console.error(err, `(${event.Name})`)
             });
-    })
-    return output
-}
-
-// rewrote this so the identities are obtained before they go in. currently location works this way anyway
-async function FetchRawTimetableData(IdentitiesToQuery, Day, DateToFetch = new Date(), Mode, StartTime, EndTime) {
-    /*  two modes, 'programme' and 'location'. programme is the default.
-        programme expects one string or a list with one string, location can take a list of any size.
-        times are set to 8:00 - 22:00 if StartTime is not defined. */
-    if (typeof (Mode) != 'string') {
-        Mode = 'programme';
-    };
-
-    let CategoryIdentity = (Mode == 'programme') ? ProgrammeIdentity : LocationIdentity;
-
-    let output = new Promise(function (resolve, reject) {
-        const ReqPayload = {
-            method: 'POST',
-            uri: `https://opentimetable.dcu.ie/broker/api/categoryTypes/${CategoryIdentity}/categories/events/filter`,
-            headers: ReqHeaders,
-            body: ConstructRequestBody(Day, DateToFetch, IdentitiesToQuery, StartTime, EndTime),
-            json: true
+            //return event.Name = moduleName;
+          }));
         };
-
-        Request(ReqPayload) // Send the HTTP Request
-            .then(async function (res_body) {
-                //     await Promise.all(res_body[0].CategoryEvents.map(async event => {
-                //         let moduleName = await FetchModuleNameFromCode(event.Name.slice(0, 5));
-                //         return event.Name = moduleName;
-                //     }));
-                
-                for (let currentIndex = 0; currentIndex < res_body.length; currentIndex++) {
-                    await Promise.all(res_body[parseInt(currentIndex)].CategoryEvents.map(async event => {
-                        await FetchModuleNameFromCode(event.Name.slice(0, 5)).then(moduleName => {
-                            event.Name = moduleName
-                        }).catch(err => {
-                            console.error(err, `(${event.Name})`)
-                        });
-                        //return event.Name = moduleName;
-                    }));
-                };
-                resolve(res_body)
-            })
-            .catch(function (err) { // Catch any errors
-                console.error(err)
-                reject(err)
-            });
-    })
-    return output
+        resolve(res_body)
+      })
+      .catch(function (err) { // Catch any errors
+        console.error(err)
+        reject(err)
+      });
+  })
+  return output
 }
 
-async function FetchModuleNameFromCode(Query) {
+// Starts a search from a module code, and returns the title of the first result
+async function fetchModuleNameFromCode(query) {
+  var reqPayload = {
+    method: 'POST',
+    uri: `https://opentimetable.dcu.ie/broker/api/CategoryTypes/${moduleIdentity}/Categories/Filter?pageNumber=1&query=${query}`,
+    headers: reqHeaders,
+    json: true
+  };
 
-    var ReqPayload = {
-        method: 'POST',
-        uri: `https://opentimetable.dcu.ie/broker/api/CategoryTypes/525fe79b-73c3-4b5c-8186-83c652b3adcc/Categories/Filter?pageNumber=1&query=${Query}`,
-        headers: ReqHeaders,
-        json: true
-    };
+  return new Promise(function (resolve, reject) {
+    Request(reqPayload) // Send the HTTP Request
+      .then(function (res_body) {
+        let results = res_body['Results'];
 
-    return new Promise(function (resolve, reject) {
-        Request(ReqPayload) // Send the HTTP Request
-            .then(function (res_body) {
-                let Results = res_body['Results'];
-
-                if (Results.length == 0) {
-                    reject('Course identity not found with supplied course code.');
-                } else {
-                    resolve(res_body['Results'][0]['Name']);
-                }
-            })
-            .catch(function (err) { // Catch any errors
-                reject(err);
-            });
-    });
+        if (results.length == 0) {
+          reject('Course identity not found with supplied course code.');
+        } else {
+          resolve(res_body['Results'][0]['Name']);
+        }
+      })
+      .catch(function (err) { // Catch any errors
+        reject(err);
+      });
+  });
 }
 
 exported = {
-    Weekdays, FetchDay, ExtractTimeFromDate, ReqHeaders, StartOfWeek, ConstructRequestBody, FetchCourseCodeIdentity, FetchRawTimetableData, FetchModuleNameFromCode
+  weekdays, fetchDay, extractTimeFromDate, reqHeaders, startOfWeek, constructRequestBody, fetchCourseCodeIdentity, fetchRawTimetableData, fetchModuleNameFromCode
 }
 
 module.exports = exported

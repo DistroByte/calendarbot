@@ -48,7 +48,7 @@ function main(global) {
                 }
             ).catch(
                 err => {
-                    console.log(`Failed to make request for ${commandData.name} (${err})`)
+                    console.error(`Failed to make request for ${commandData.name} (${err})`)
                 }
             )
         }

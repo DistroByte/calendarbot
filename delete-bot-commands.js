@@ -49,7 +49,7 @@ function main(global) {
                 }
             ).catch(
                 err => {
-                    console.log(`Failed to make request for ${commandID} (${err})`)
+                    console.error(`Failed to make request for ${commandID} (${err})`)
                 }
             )
         }
