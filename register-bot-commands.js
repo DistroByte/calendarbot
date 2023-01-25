@@ -25,7 +25,7 @@ commandJSON.forEach(
                 if (res.ok) {
                     console.log(`Successfully registered ${commandData.name}, response ${res.status} (${res.statusText})`)
                 } else {
-                    console.log(`Failed to register ${commandData.name}, response ${res.status} (${res.statusText})`)
+                    console.log(`Failed to register ${commandData.name}, response ${res.status} (${res.statusText})\n${res.text}`)
                 };
             }
         ).catch(

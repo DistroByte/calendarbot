@@ -17,11 +17,19 @@ function fetchDay(offset) {
 };
 
 // Gets current time in the syntax '2:24'. JS apparently doesn't have a native function for this.
-function extractTimeFromDate(DateObject = new Date()) {
+function extractTimeFromDate(DateObject = new Date(),) {
   const hour = DateObject.getHours();
   const minute = DateObject.getMinutes();
   return (hour + ':' + minute)
 };
+
+// Convert an existing hour to 'XX:XX' syntax
+function timeToString(time) {
+  time = time.toString().split(':')[0]
+  time = '0' + time.toString() + ':00';
+  time = time.slice(-5);
+  return time
+}
 
 const reqHeaders = {
   'Authorization': 'basic T64Mdy7m[',
@@ -176,7 +184,7 @@ async function fetchModuleNameFromCode(query) {
 }
 
 exported = {
-  weekdays, fetchDay, extractTimeFromDate, reqHeaders, startOfWeek, constructRequestBody, fetchCourseCodeIdentity, fetchRawTimetableData, fetchModuleNameFromCode
+  weekdays, fetchDay, extractTimeFromDate, timeToString,reqHeaders, startOfWeek, constructRequestBody, fetchCourseCodeIdentity, fetchRawTimetableData, fetchModuleNameFromCode
 }
 
 module.exports = exported

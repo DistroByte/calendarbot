@@ -117,28 +117,17 @@ client.on('interactionCreate', async interaction => {
       });
   }
 
-  if (commandName === 'checkfree') {
+  if (commandName === 'checkrooms' || commandName === 'labfree') {
+    await interaction.deferReply();
     let errorEmbed = DiscordFunctions.buildErrorEmbed(commandName);
-    const startHour = interaction.options.getString('hour');
-    const roomCodes = interaction.options.getString('rooms').toUpperCase().split(' ');
+    let timeRange = interaction.options.getString('times');
+    [errorEmbed, timeRange] = RoomCheck.generateTimeRange(errorEmbed, timeRange)
 
-    const embedsToSend = await RoomCheck.checkFree(errorEmbed, roomCodes, startHour);
-
-    await interaction.reply(
-      { embeds: embedsToSend }
-    );
-  }
-
-  if (commandName === 'labfree') {
-    let errorEmbed = DiscordFunctions.buildErrorEmbed(commandName);
-    const startHour = interaction.options.getString('hour');
-    const roomCodes = ['LG25', 'LG26', 'LG27', 'L101', 'L114', 'L125', 'L128', 'L129']
-
-    const embedsToSend = await RoomCheck.checkFree(errorEmbed, roomCodes, startHour);
-
-    await interaction.reply(
-      { embeds: embedsToSend }
-    );
+    let roomCodes = ['LG25', 'LG26', 'LG27', 'L101', 'L114', 'L125', 'L128', 'L129'];
+    if (commandName === 'checkrooms') roomCodes = interaction.options.getString('rooms').toUpperCase().split(/\s/);
+  
+    const embedsToSend = await RoomCheck.checkRoom(errorEmbed, roomCodes, timeRange);
+    await interaction.followUp({ embeds: embedsToSend });
   }
 });
 
