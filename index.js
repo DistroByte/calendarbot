@@ -98,7 +98,7 @@ client.on('interactionCreate', async interaction => {
       }
     }
     
-    Timetable.fetchRawTimetableData(courseID, day, new Date())
+    Timetable.fetchRawTimetableData(courseID, day, new Date(), 'programme', '8:00', '22:00')
       .then(async (res) => {
         res = res[0];
         if (res.CategoryEvents.length < 1) {

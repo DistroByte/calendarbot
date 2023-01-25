@@ -49,6 +49,7 @@ function startOfWeek(dateToFetch) {
 }
 
 // Takes the JSON file and edits it according to the arguments, so it can be used for requests.
+// Identities can be a single string or a list, start and end time must be strings (like 8:00)
 function constructRequestBody(day, dateToFetch, identities, startTime, endTime) {
   let requestBodyTemplate = require('./body.json')
 
@@ -65,8 +66,12 @@ function constructRequestBody(day, dateToFetch, identities, startTime, endTime) 
   if (typeof (startTime) == 'string') {
     requestBodyTemplate['ViewOptions']['TimePeriods'][0]['startTime'] = startTime
     requestBodyTemplate['ViewOptions']['TimePeriods'][0]['endTime'] = endTime
+  } else {
+    requestBodyTemplate['ViewOptions']['TimePeriods'][0]['startTime'] = '8:00'
+    requestBodyTemplate['ViewOptions']['TimePeriods'][0]['endTime'] = '22:00'
   };
 
+  //console.log(requestBodyTemplate['ViewOptions']['TimePeriods'])
   requestBodyTemplate['CategoryIdentities'] = identities
   return requestBodyTemplate
 }
